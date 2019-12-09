@@ -103,31 +103,33 @@ public abstract class BranchPredictor {
 	}
 
 	public void replaceLRUPHT(String address) {
-		int lru_size = least_recently_used.getSize() - 1;
 		int replace = -1;
 		boolean full = true;
 
 		for (int i = 0; i < PHT.size(); i++) {
 			if (PHT.get(i).get(0).equals("-1")) {
-				replace = lru_size;
+				replace = i;
 				full = false;
+				break;
 			}
 		}
 		if (full) {
+			System.out.println("infull");
 			String lru = least_recently_used.getLRU();
 			// System.out.println("PHT LRU " + lru);
 			for (int i = 0; i < PHT.size(); i++) {
 				if (PHT.get(i).get(0).equals(lru)) {
-					replace = i - 1;
+					replace = i;
+					break;
 				}
 			}
 		}
 
-		if (replace == -1) {
-			replace = lru_size;
-		}
+//		if (replace == -1) {
+//			replace = lru_size;
+//		}
 
-		// System.out.println("Replacing PHT index " + replace + " with " + address);
+		System.out.println("Replacing PHT index " + replace + " with " + address);
 		PHT.get(replace).set(0, address);
 		PHT.get(replace).set(1, "0");
 

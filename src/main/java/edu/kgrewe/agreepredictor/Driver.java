@@ -38,7 +38,7 @@ public class Driver {
 			System.exit(0);
 		}
 
-		if (counter_bits%2 != 0 || counter_bits < 2) {
+		if (counter_bits % 2 != 0 || counter_bits < 2) {
 			System.out.println("Bit counter size invalid.");
 			System.exit(0);
 		}
@@ -51,7 +51,7 @@ public class Driver {
 				System.out.println("[type] [table_size] [counter_bits] [inputfilename] [outputfilename]\n");
 				System.out.println("type: The type of branch predictor.");
 				System.out.println(
-						"     values: 1L - One Level, 2G - Two Level Global, GS - GShare, 2L - Two Level Local");
+						"     values: 1L - One Level, 2G - Two Level Global, GS - GShare, 2L - Two Level Local, AGR - Agree");
 				System.out.println("table_size: The total number of entries in the PHT.");
 				System.out.println("     values: any multiple of two");
 				System.out.println("counter_bits: The number of bits to use for the PHT counter.");
@@ -95,23 +95,23 @@ public class Driver {
 				input = new Scanner(new File(file_in));
 				while (input.hasNext()) {
 					String line = input.nextLine();
-					//System.out.println(line);
+					// System.out.println(line);
 					String arr[] = line.split(" ");
-					//System.out.println(arr[0]);
+					// System.out.println(arr[0]);
 					if (arr[0].contains("0x")) {
 						arr[0] = arr[0].replace("0x", "");
-						//System.out.println(arr[0]);
+						// System.out.println(arr[0]);
 						String newArr[] = arr[0].split("\t");
-						//System.out.println(newArr[0] + " " + newArr[1]);
+						// System.out.println(newArr[0] + " " + newArr[1]);
 						arr[0] = newArr[0];
 						arr[1] = newArr[1];
 					}
-					
+
 //					i++;
 //					if (i > 50000000) {
 //						break;
 //					}
-					//System.out.println(arr[0] + " " + arr[1]);
+					// System.out.println(arr[0] + " " + arr[1]);
 					branch_instructions.add(arr[0] + " " + arr[1]);
 				}
 				input.close();
@@ -125,24 +125,14 @@ public class Driver {
 			BranchPredictor bp = null;
 
 			// Determine the type of branch predictor to create.
-			if (type.equals("1L")) {
-				// One Level.
-				bp = new OneLevel(table_size, counter_bits);
-				System.out.println("Creating one level branch predictor with PHT size " + table_size + "...");
-				
-			} else if (type.equals("2G")) {
-				// Two Level Global.
-				bp = new TwoLevelGlobal(table_size, counter_bits);
-				System.out.println("Creating two level global branch predictor with PHT size " + table_size + " and 10 bit GHR...");
-			} else if (type.equals("GS")) {
-				// GShare.
-				bp = new GShare(table_size, counter_bits);
-				System.out.println("Creating gshare branch predictor with PHT size " + table_size + " and 10 bit GHR...");
-			} else if (type.equals("2L")) {
+			switch (type) {
+			case "AGR":
 				// Two Level Local.
-				bp = new TwoLevelLocal(table_size, counter_bits);
-				System.out.println("Creating two level local branch predictor with PHT size " + table_size + " and 10 bit local history...");
-			} else {
+				bp = new Agree(table_size, counter_bits);
+				System.out.println("Creating agree branch predictor with PHT size " + table_size
+						+ " and 10 bit global history...");
+				break;
+			default:
 				System.out.println("Invalid argument for type. Rerun and try again.");
 				System.exit(0);
 			}
