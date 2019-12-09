@@ -116,7 +116,7 @@ public abstract class BranchPredictor {
 		if (full) {
 			// System.out.println("infull");
 			String lru = least_recently_used.getLRU();
-			// System.out.println("PHT LRU " + lru);
+			//System.out.println("PHT LRU " + lru);
 			for (int i = 0; i < PHT.size(); i++) {
 				if (PHT.get(i).get(0).equals(lru)) {
 					replace = i;
@@ -125,13 +125,9 @@ public abstract class BranchPredictor {
 			}
 		}
 
-//		if (replace == -1) {
-//			replace = lru_size;
-//		}
-
-		// System.out.println("Replacing PHT index " + replace + " with " + address);
+		//System.out.println("Replacing PHT index " + replace + " with " + address);
 		PHT.get(replace).set(0, address);
-		PHT.get(replace).set(1, "0");
+		PHT.get(replace).set(1, max_value);
 		return replace;
 	}
 

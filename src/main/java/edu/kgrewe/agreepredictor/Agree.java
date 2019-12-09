@@ -69,12 +69,12 @@ public class Agree extends BranchPredictor {
 		}
 
 		// If found in PHT, get the PHTBit.
-		boolean PHTBit = false;
+		boolean PHTBit = true;
 		if (found) {
 			String PHT_value = PHT.get(index).get(1);
 
 			// Determine the PHT bit.
-			if (PHT_value.compareTo(getMin_value()) < 0) {
+			if (Integer.parseInt(PHT_value) <= Integer.parseInt(getMin_value())) {
 				PHTBit = false;
 			} else {
 				PHTBit = true;
@@ -84,7 +84,7 @@ public class Agree extends BranchPredictor {
 		}
 
 		int BBS_index = -1;
-		String tag = address.substring(0, address.length()-4);
+		String tag = address.substring(0, address.length()-1);
 		// Check the Biasing Bit Storage.
 		found = false;
 		for (int i = 0; i < BBS_size; i++) {
@@ -94,7 +94,8 @@ public class Agree extends BranchPredictor {
 				break;
 			}
 		}
-
+		
+		least_recently_used_BBS.access(tag);
 		boolean BBSBit = false;
 		if (found) {
 			String BBS_value = BBS.get(BBS_index).get(1);
@@ -107,9 +108,7 @@ public class Agree extends BranchPredictor {
 			// If not found, use lowest bit as BBSBit.
 			replaceLRUBBS(tag, result);
 			BBSBit = getLowest_bit(address);
-			System.out.println("[PHT & BBS After]");
-			printPHT();
-			printBBS();
+			//System.out.println("Lowest Bit used: " + BBSBit);
 		}
 
 		updateGHR(result);
@@ -119,17 +118,17 @@ public class Agree extends BranchPredictor {
 		// Otherwise decrement.
 		if (xnor_result == true) {
 			updatePHTState(index, xor, "T");
-			 System.out.println("[PHT & BBS After]");
-			printPHT();
-			printBBS();
-			System.out.println("Predict TRUE");
+//			 System.out.println("[PHT & BBS After]");
+//			printPHT();
+//			printBBS();
+//			System.out.println("Predict TRUE");
 			return Predict.TRUE;
 		} else {
 			updatePHTState(index, xor, "F");
-			System.out.println("[PHT & BBS After]");
-			printPHT();
-			printBBS();
-			System.out.println("Predict FALSE");
+//			System.out.println("[PHT & BBS After]");
+//			printPHT();
+//			printBBS();
+//			System.out.println("Predict FALSE");
 			return Predict.FALSE;
 		}
 	}
@@ -177,6 +176,7 @@ public class Agree extends BranchPredictor {
 	}
 
 	private boolean getXNOR(boolean PHTbit, boolean BTBbit) {
+		//System.out.println(PHTbit + " XNOR " + BTBbit + " = " + !(PHTbit ^ BTBbit));
 		return !(PHTbit ^ BTBbit);
 	}
 
@@ -193,7 +193,7 @@ public class Agree extends BranchPredictor {
 		}
 		if (full) {
 			String lru = least_recently_used_BBS.getLRU();
-			// System.out.println("BBS LRU " + lru);
+			//System.out.println("BBS LRU " + lru);
 			for (int i = 0; i < BBS_size; i++) {
 				if (BBS.get(i).get(0).equals(lru)) {
 					replace = i;
@@ -206,7 +206,7 @@ public class Agree extends BranchPredictor {
 			replace = BBS_size - 1;
 		}
 
-		// System.out.println("Replacing BBS index " + replace + " with " + address);
+		//System.out.println("Replacing BBS index " + replace + " with " + address);
 		BBS.get(replace).set(0, address);
 		if (result.equals("T") || result.equals("1")) {
 			BBS.get(replace).set(1, "1");
