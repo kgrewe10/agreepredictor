@@ -1,23 +1,22 @@
 package edu.kgrewe.agreepredictor;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 
 public class Agree extends BranchPredictor {
 	private String GHR;
-	private StringBuilder newPC;
+	private final int GHR_SIZE = 10;
+
 	private ArrayList<ArrayList<String>> BBS;
-	private LRU least_recently_used_BBS;
-	private final int BBS_size = 4096;
+	private final int BBS_SIZE = 4096;
 
 	public Agree() {
 		super();
 		GHR = "0";
-		newPC = null;
 		BBS = new ArrayList<ArrayList<String>>();
-		least_recently_used_BBS = new LRU(BBS_size);
 
 		// Initialize BBS.
-		for (int i = 0; i < BBS_size; i++) {
+		for (int i = 0; i < BBS_SIZE; i++) {
 			ArrayList<String> row = new ArrayList<String>();
 			row.add("-1");
 			row.add("-1");
@@ -28,12 +27,10 @@ public class Agree extends BranchPredictor {
 	public Agree(long table_size, long counter_bits) {
 		super(table_size, counter_bits);
 		GHR = "0";
-		newPC = null;
 		BBS = new ArrayList<ArrayList<String>>();
-		least_recently_used_BBS = new LRU(BBS_size);
 
 		// Initialize BBS.
-		for (int i = 0; i < BBS_size; i++) {
+		for (int i = 0; i < BBS_SIZE; i++) {
 			ArrayList<String> row = new ArrayList<String>();
 			row.add("-1");
 			row.add("-1");
@@ -43,23 +40,22 @@ public class Agree extends BranchPredictor {
 
 	@Override
 	public Predict prediction(String address, String result) {
-		// Perform the GShare of PC and GHR to index PHT.
+
+//		System.out.println("\n================================================================");
+//		System.out.println("Predicting branch " + address + " with actual result " + result);
 		String xor = getXOR(address);
+		updateGHR(result);
+//		System.out.println("XOR: " + xor);
+//		printPHT();
+//		printBBS();
+
+		// Perform the GShare of PC and GHR to index PHT.
 		access(xor);
 		boolean found = false;
 		int index = -1;
 		ArrayList<ArrayList<String>> PHT = getPHT();
 
-//		System.out.println("\n================================================================");
-//		System.out.println("================================================================");
-//		System.out.println("Predicting branch " + address + " with actual result " + result);
-//		System.out.println("GHR: " + GHR);
-//		System.out.println("PC: " + address);
-//		System.out.println("XOR: " + getXOR(address));
-//		System.out.println("[PHT & BBS Before]");
-//		printPHT();
-//		printBBS();
-
+		// Check the PHT for the index using xor.
 		for (int i = 0; i < PHT.size(); i++) {
 			if (PHT.get(i).get(0).equals(xor)) {
 				found = true;
@@ -69,7 +65,7 @@ public class Agree extends BranchPredictor {
 		}
 
 		// If found in PHT, get the PHTBit.
-		boolean PHTBit = true;
+		boolean PHTBit = false;
 		if (found) {
 			String PHT_value = PHT.get(index).get(1);
 
@@ -83,59 +79,46 @@ public class Agree extends BranchPredictor {
 			index = replaceLRUPHT(xor);
 		}
 
-		int BBS_index = -1;
-		String tag = address.substring(0, address.length()-1);
-		// Check the Biasing Bit Storage.
-		found = false;
-		for (int i = 0; i < BBS_size; i++) {
-			if (BBS.get(i).get(0).equals(tag)) {
-				found = true;
-				BBS_index = i;
-				break;
-			}
-		}
-		
-		least_recently_used_BBS.access(tag);
+		// Get the modulus of the address
+		BigInteger addr = new BigInteger(Utility.hexToDec(address));
+		BigInteger mod = addr.mod(BigInteger.valueOf(BBS_SIZE));
+		int modInt = mod.intValue();
+
+		// Check the BBS for the address, if not found use the lowest bit.
+		// System.out.println(addr + " mod " + BBS_SIZE + " = " + mod);
 		boolean BBSBit = false;
-		if (found) {
-			String BBS_value = BBS.get(BBS_index).get(1);
+		if (BBS.get(modInt).get(0).equals(address)) {
+			String BBS_value = BBS.get(modInt).get(1);
 			if (BBS_value.equals("1")) {
 				BBSBit = true;
 			} else {
 				BBSBit = false;
 			}
 		} else {
-			// If not found, use lowest bit as BBSBit.
-			replaceLRUBBS(tag, result);
+			// Use lowest bit if not found.
 			BBSBit = getLowest_bit(address);
-			//System.out.println("Lowest Bit used: " + BBSBit);
+			replaceDirectBBS(address, modInt, result);
 		}
-
-		updateGHR(result);
 		boolean xnor_result = getXNOR(PHTBit, BBSBit);
 
-		// Increment PHT counter if bits agree,
-		// Otherwise decrement.
+		// If bits agree predict true and update PHT,
+		// Else predict false.
 		if (xnor_result == true) {
-			updatePHTState(index, xor, "T");
-//			 System.out.println("[PHT & BBS After]");
-//			printPHT();
-//			printBBS();
-//			System.out.println("Predict TRUE");
+			updatePHTState(index, xor, result);
+			// System.out.println("Predict TRUE");
+			// System.out.println("================================================================\n");
 			return Predict.TRUE;
 		} else {
-			updatePHTState(index, xor, "F");
-//			System.out.println("[PHT & BBS After]");
-//			printPHT();
-//			printBBS();
-//			System.out.println("Predict FALSE");
+			// System.out.println("Didn't update PHT, bits don't agree");
+			// System.out.println("Predict FALSE");
+			// System.out.println("================================================================\n");
 			return Predict.FALSE;
 		}
 	}
 
 	private void updateGHR(String result) {
 		// If GHR is 10 bits, remove the oldest bit.
-		if (GHR.length() == 10) {
+		if (GHR.length() == GHR_SIZE) {
 			// System.out.println("Before shift " + GHR);
 			GHR = GHR.substring(1, GHR.length());
 			// System.out.println("After shift " + GHR);
@@ -149,77 +132,46 @@ public class Agree extends BranchPredictor {
 	}
 
 	private String getXOR(String address) {
-		newPC = null;
+		StringBuilder newPC = null;
 
-		// Ensure the address is legit.
+		// Convert address to binary to perform XOR.
 		try {
 			newPC = new StringBuilder(Utility.hexToBin(address));
 		} catch (Exception e) {
 			System.out.println("Error converting address to binary.");
 		}
+		// System.out.println("Binary PC: " + newPC);
+		// System.out.println("GHR: " + GHR);
 
-		// System.out.println("Binary PC" + newPC);
-
-//		if (newPC.length() < 64) {
-//			int add = 64 - newPC.length();
-//			for (int i = 0; i < add; i++) {
-//				newPC.insert(0, "0");
-//			}
-//		}
-
-		String finalPC = newPC.toString();
+		// Get the middle bits to PC to XOR.
 		int endLength = newPC.length() - 6;
-		// System.out.println("Before trim" + finalPC);
-		finalPC = finalPC.substring(endLength - 10, endLength);
-		// System.out.println("After trim" + finalPC);
-		return Integer.toBinaryString(((Integer.parseInt(GHR, 2)) ^ (Integer.parseInt(finalPC, 2))));
+		String finalPC = newPC.substring(endLength - GHR_SIZE, endLength);
+
+		// System.out.println(finalPC + " XOR " + GHR + " performed.");
+		return Integer.toBinaryString(Integer.parseInt(GHR, 2) ^ Integer.parseInt(finalPC, 2));
 	}
 
 	private boolean getXNOR(boolean PHTbit, boolean BTBbit) {
-		//System.out.println(PHTbit + " XNOR " + BTBbit + " = " + !(PHTbit ^ BTBbit));
+		// System.out.println(PHTbit + " XNOR " + BTBbit + " = " + !(PHTbit ^ BTBbit));
 		return !(PHTbit ^ BTBbit);
 	}
 
-	private void replaceLRUBBS(String address, String result) {
-		int replace = -1;
-		boolean full = true;
-
-		for (int i = 0; i < BBS_size; i++) {
-			if (BBS.get(i).get(0).equals("-1")) {
-				replace = i;
-				full = false;
-				break;
-			}
-		}
-		if (full) {
-			String lru = least_recently_used_BBS.getLRU();
-			//System.out.println("BBS LRU " + lru);
-			for (int i = 0; i < BBS_size; i++) {
-				if (BBS.get(i).get(0).equals(lru)) {
-					replace = i;
-					break;
-				}
-			}
-		}
-
-		if (replace < 0) {
-			replace = BBS_size - 1;
-		}
-
-		//System.out.println("Replacing BBS index " + replace + " with " + address);
-		BBS.get(replace).set(0, address);
+	private void replaceDirectBBS(String address, int mod, String result) {
+		// System.out.println("Replacing BBS index with mod result " + mod + " with " +
+		// address);
+		BBS.get(mod).set(0, address);
 		if (result.equals("T") || result.equals("1")) {
-			BBS.get(replace).set(1, "1");
+			BBS.get(mod).set(1, "1");
 		} else {
-			BBS.get(replace).set(1, "0");
+			BBS.get(mod).set(1, "0");
 		}
 	}
 
 	private void printBBS() {
 		System.out.println("-----------Biasing Bit Storage--------");
-		for (int i = 0; i < BBS_size; i++) {
+		for (int i = 0; i < BBS_SIZE; i++) {
 			if (BBS.get(i).get(0).equals("-1")) {
-				break;
+				continue;
 			}
 			System.out.println(BBS.get(i).get(0) + " --> " + BBS.get(i).get(1));
 		}

@@ -3,25 +3,25 @@ package edu.kgrewe.agreepredictor;
 import java.util.ArrayList;
 
 public abstract class BranchPredictor {
-	private final long table_size;
-	private final long counter_bits;
-	private final long max_counter;
+	private final long TABLE_SIZE;
+	private final long COUNTER_BITS;
+	private final long MAX_COUNTER;
 	private ArrayList<ArrayList<String>> PHT;
 	private LRU least_recently_used;
-	private final String max_value;
-	private final String min_value;
+	private final String MAX_VALUE;
+	private final String MIN_VALUE;
 
 	public BranchPredictor() {
-		this.table_size = 1024;
-		this.counter_bits = 2;
-		this.max_counter = (long) Math.pow(2, counter_bits) - 1;
-		max_value = String.valueOf((getMax_counter() + 1) / 2);
-		min_value = String.valueOf(((getMax_counter() + 1) / 2) - 1);
+		this.TABLE_SIZE = 1024;
+		this.COUNTER_BITS = 2;
+		this.MAX_COUNTER = (long) Math.pow(2, COUNTER_BITS) - 1;
+		MAX_VALUE = String.valueOf((getMax_counter() + 1) / 2);
+		MIN_VALUE = String.valueOf(((getMax_counter() + 1) / 2) - 1);
 		PHT = new ArrayList<ArrayList<String>>();
-		least_recently_used = new LRU((int) table_size);
+		least_recently_used = new LRU((int) TABLE_SIZE);
 
 		// Initialize PHT.
-		for (int i = 0; i < table_size; i++) {
+		for (int i = 0; i < TABLE_SIZE; i++) {
 			ArrayList<String> row = new ArrayList<String>();
 			row.add(String.valueOf(-1));
 			row.add(String.valueOf(0));
@@ -30,11 +30,11 @@ public abstract class BranchPredictor {
 	}
 
 	public BranchPredictor(long table_size, long counter_bits) {
-		this.table_size = table_size;
-		this.counter_bits = counter_bits;
-		this.max_counter = (long) Math.pow(2, counter_bits) - 1;
-		max_value = String.valueOf((getMax_counter() + 1) / 2);
-		min_value = String.valueOf(((getMax_counter() + 1) / 2) - 1);
+		this.TABLE_SIZE = table_size;
+		this.COUNTER_BITS = counter_bits;
+		this.MAX_COUNTER = (long) Math.pow(2, counter_bits) - 1;
+		MAX_VALUE = String.valueOf((getMax_counter() + 1) / 2);
+		MIN_VALUE = String.valueOf(((getMax_counter() + 1) / 2) - 1);
 		PHT = new ArrayList<ArrayList<String>>();
 		least_recently_used = new LRU((int) table_size);
 
@@ -48,7 +48,7 @@ public abstract class BranchPredictor {
 	}
 
 	public long getTable_size() {
-		return table_size;
+		return TABLE_SIZE;
 	}
 
 	public void access(String address) {
@@ -56,7 +56,7 @@ public abstract class BranchPredictor {
 	}
 
 	public long getCounter_bits() {
-		return counter_bits;
+		return COUNTER_BITS;
 	}
 
 	public abstract Predict prediction(String address, String result);
@@ -70,7 +70,7 @@ public abstract class BranchPredictor {
 	}
 
 	public long getMax_counter() {
-		return max_counter;
+		return MAX_COUNTER;
 	}
 
 	public void printPHT() {
@@ -91,7 +91,7 @@ public abstract class BranchPredictor {
 		ArrayList<ArrayList<String>> new_hash = getPHT();
 		String val = new_hash.get(index).get(1);
 		int value = Integer.parseInt(val);
-		if ((result.equals("T") || result.equals("1")) && value < getMax_counter()) {
+		if ((result.equals("T") || result.equals("1")) && (value < MAX_COUNTER)) {
 			// System.out.println("True");
 			new_hash.get(index).set(1, String.valueOf((value) + 1));
 		} else if ((result.equals("N") || result.equals("0")) && (value > 0)) {
@@ -127,15 +127,15 @@ public abstract class BranchPredictor {
 
 		//System.out.println("Replacing PHT index " + replace + " with " + address);
 		PHT.get(replace).set(0, address);
-		PHT.get(replace).set(1, max_value);
+		PHT.get(replace).set(1, "0");
 		return replace;
 	}
 
 	public String getMax_value() {
-		return max_value;
+		return MAX_VALUE;
 	}
 
 	public String getMin_value() {
-		return min_value;
+		return MIN_VALUE;
 	}
 }

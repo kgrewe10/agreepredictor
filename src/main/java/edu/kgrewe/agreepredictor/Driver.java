@@ -14,7 +14,6 @@ public class Driver {
 			System.exit(0);
 		}
 
-		String type = "";
 		long table_size = 0;
 		long counter_bits = 0;
 		String file_in = "";
@@ -23,11 +22,10 @@ public class Driver {
 		PrintWriter printer = null;
 
 		try {
-			type = args[0];
-			table_size = Long.parseLong(args[1]);
-			counter_bits = Long.parseLong(args[2]);
-			file_in = args[3];
-			file_out = args[4];
+			table_size = Long.parseLong(args[0]);
+			counter_bits = Long.parseLong(args[1]);
+			file_in = args[2];
+			file_out = args[3];
 		} catch (Exception e) {
 			System.out.println("Mismatched argument types.\nEnter help as the only argument to view the format.");
 			System.exit(0);
@@ -43,15 +41,12 @@ public class Driver {
 			System.exit(0);
 		}
 
-		if (args.length == 5 || args.length == 1) {
+		if (args.length == 4 || args.length == 1) {
 			if (args[0].equals("help") || args.length == 1) {
-				System.out.println("Branch Predictor\n\nHELP MENU");
+				System.out.println("Agree Branch Predictor\n\nHELP MENU");
 				System.out.println("This application takes in 5 arguments in order as specified below.");
 				System.out.println("\nARGUMENTS FORMAT\n");
-				System.out.println("[type] [table_size] [counter_bits] [inputfilename] [outputfilename]\n");
-				System.out.println("type: The type of branch predictor.");
-				System.out.println(
-						"     values: 1L - One Level, 2G - Two Level Global, GS - GShare, 2L - Two Level Local, AGR - Agree");
+				System.out.println("[table_size] [counter_bits] [inputfilename] [outputfilename]\n");
 				System.out.println("table_size: The total number of entries in the PHT.");
 				System.out.println("     values: any multiple of two");
 				System.out.println("counter_bits: The number of bits to use for the PHT counter.");
@@ -63,7 +58,7 @@ public class Driver {
 				System.exit(0);
 			}
 
-			out = new File(file_out + ".txt");
+			out = new File(file_out);
 			try {
 				printer = new PrintWriter(out);
 			} catch (FileNotFoundException e1) {
@@ -74,17 +69,15 @@ public class Driver {
 			System.out.println("\n[SETUP]");
 			System.out.println("Reading input...");
 			// Prints out the values entered to the user.
-			System.out.println("Type: " + type);
-			System.out.println("Table Size: " + table_size);
+			System.out.println("PHT Table Size: " + table_size);
 			System.out.println("Counter Bits: " + counter_bits);
 			System.out.println("Input Filename: " + file_in);
-			System.out.println("Output Filename: " + file_out + ".txt");
+			System.out.println("Output Filename: " + file_out);
 
-			printer.println("Type: " + type);
-			printer.println("Table Size: " + table_size);
+			printer.println("PHT Table Size: " + table_size);
 			printer.println("Counter Bits: " + counter_bits);
 			printer.println("Input Filename: " + file_in);
-			printer.println("Output Filename: " + file_out + ".txt");
+			printer.println("Output Filename: " + file_out);
 
 			System.out.println("Parsing input file...");
 			// Read input file and parse it.
@@ -107,11 +100,6 @@ public class Driver {
 						arr[1] = newArr[1];
 					}
 
-//					i++;
-//					if (i > 50000000) {
-//						break;
-//					}
-					// System.out.println(arr[0] + " " + arr[1]);
 					branch_instructions.add(arr[0] + " " + arr[1]);
 				}
 				input.close();
@@ -124,20 +112,11 @@ public class Driver {
 			BranchPredictorSim bps = null;
 			BranchPredictor bp = null;
 
-			// Determine the type of branch predictor to create.
-			switch (type) {
-			case "AGR":
-				// Two Level Local.
-				bp = new Agree(table_size, counter_bits);
-				System.out.println("Creating agree branch predictor with PHT size " + table_size
-						+ " and 10 bit global history...");
-				break;
-			default:
-				System.out.println("Invalid argument for type. Rerun and try again.");
-				System.exit(0);
-			}
+			// Create agree predictor simulation.
+			System.out.println(
+					"Creating agree branch predictor with PHT size " + table_size + " and GShare base predictor...");
+			bp = new Agree(table_size, counter_bits);
 			bps = new BranchPredictorSim(bp);
-
 			System.out.println("Setup complete.");
 
 			// Starts the simulation.

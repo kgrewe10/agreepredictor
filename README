@@ -1,0 +1,44 @@
+---Agree Predictor v1---
+
+
+-Built on 64 Bit Linux
+-Platform independent if JVM is installed.
+
+READ BEFORE RUNNING APPLICATION:
+
+1. To run the cache simulator you must have a JVM installed on the system.  Once the JVM is installed, you may proceed.
+
+2. The executable JAR file agreepredictor-0.0.1-SNAPSHOT.jar is located in /target directory along with the traces.
+
+3. java -jar [jarfile] [arg1] [arg2]... etc. is the format to run the jar.
+
+4. To enter the help menu: java -jar agreepredictor-0.0.1-SNAPSHOT.jar help
+
+5. This application is applicable to Pin traces as well as the GCC trace.
+
+6. This application takes in 4 arguments in order as specified below.  Order matters.
+
+
+
+ARGUMENTS FORMAT
+
+[table_size] [counter_bits] [inputfilename] [outputfilename]
+
+table_size: The total number of entries in the PHT.
+     values: any multiple of two
+counter_bits: The number of bits to use for the PHT counter.
+     values: any divisible by 2.
+associativity: The associativity of the cache.  Use 1 for direct mapped.
+     values: any multiple of two
+inputfilename: The name of the input file to use for the simulation.
+     values: a string
+outputfilename: The name of the output file to create with results.
+     values: a string
+
+
+*******EXAMPLE CONSOLE INPUT*******
+Example 1: java -jar agreepredictor-0.0.1-SNAPSHOT.jar 1024 2 branch-trace-gcc.trace\(1\) testingoutput
+	Simulates an agree branch predictor with 1024 PHT entries and a 2 bit counter.  
+
+Example 2: java -jar agreepredictor-0.0.1-SNAPSHOT.jar 2048 2 branch-trace-gcc.trace\(1\) testingoutput
+	Simulates an agree branch predictor with 2048 PHT entries and a 6 bit counter.
